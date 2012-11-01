@@ -1,0 +1,14 @@
+.*
+*.orig
+*~
+\#*#
+
+!.gitignore
+!/.classpath
+
+/classes
+/classes.test
+/dist
+/lib
+/stamps
+/jni/*.h
