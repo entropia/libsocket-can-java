@@ -27,11 +27,11 @@ static const int ERRNO_BUFFER_LEN = 1024;
 static void throwException(JNIEnv *env, const char *const exception_name,
 			const char *const msg)
 {
-	const jclass exception = (*env)->FindClass(env, exception_name);
+	const jclass exception = env->FindClass(exception_name);
 	if (exception == NULL) {
 		return;
 	}
-	(*env)->ThrowNew(env, exception, msg);
+	env->ThrowNew(exception, msg);
 }
 
 static void throwIOExceptionMsg(JNIEnv *env, const char *const msg)
@@ -91,7 +91,7 @@ JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1discoverInterfaceIndex
 (JNIEnv *env, jclass clazz, jint socketFd, jstring ifName)
 {
 	struct ifreq ifreq;
-	const jsize ifNameSize = (*env)->GetStringUTFLength(env, ifName);
+	const jsize ifNameSize = env->GetStringUTFLength(ifName);
 	if ((int)ifNameSize > IFNAMSIZ-1) {
 		throwIllegalArgumentException(env, "illegal interface name");
 		return (jint)-1;
@@ -99,9 +99,9 @@ JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1discoverInterfaceIndex
 	
 	/* fetch interface name */
 	memset((void *)&ifreq, 0x0, sizeof(ifreq));
-	(*env)->GetStringUTFRegion(env, ifName, (jsize)0, (jsize)ifNameSize,
+	env->GetStringUTFRegion(ifName, (jsize)0, (jsize)ifNameSize,
 				ifreq.ifr_name);	
-	if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+	if (env->ExceptionCheck() == JNI_TRUE) {
 		return (jint)-1;
 	}
 	/* discover interface id */
@@ -124,7 +124,7 @@ JNIEXPORT jstring JNICALL Java_de_entropia_can_CanSocket__1discoverInterfaceName
 		throwIOExceptionErrno(env, errno);
 		return NULL;
 	}
-	const jstring ifname = (*env)->NewStringUTF(env, ifreq.ifr_name);
+	const jstring ifname = env->NewStringUTF(ifreq.ifr_name);
 	return ifname;
 }
 
@@ -151,14 +151,14 @@ JNIEXPORT void JNICALL Java_de_entropia_can_CanSocket__1sendFrame
 	memset(&frame, 0, sizeof(frame));
 	addr.can_family = AF_CAN;
 	addr.can_ifindex = (int)if_idx;
-	const jsize len = (*env)->GetArrayLength(env, data);
-	if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+	const jsize len = env->GetArrayLength(data);
+	if (env->ExceptionCheck() == JNI_TRUE) {
 		return;
 	}
 	frame.can_id = (canid_t)canid;
 	frame.can_dlc = (__u8)len;
-	(*env)->GetByteArrayRegion(env, data, 0, len, (jbyte *)&frame.data);
-	if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+	env->GetByteArrayRegion(data, 0, len, (jbyte *)&frame.data);
+	if (env->ExceptionCheck() == JNI_TRUE) {
 		return;
 	}
 	nbytes = sendto((int)fd, &frame, sizeof(frame), flags,
@@ -196,28 +196,28 @@ JNIEXPORT jobject JNICALL Java_de_entropia_can_CanSocket__1recvFrame
 	}
 	const jsize fsize = (jsize)min((size_t)frame.can_dlc,
 				(size_t)nbytes - offsetof(struct can_frame, data));
-	const jclass can_frame_clazz = (*env)->FindClass(env, "de/entropia/can/"
+	const jclass can_frame_clazz = env->FindClass("de/entropia/can/"
 							"CanSocket$CanFrame");
 	if (can_frame_clazz == NULL) {
 		return NULL;
 	}
-	const jmethodID can_frame_cstr = (*env)->GetMethodID(env, can_frame_clazz,
+	const jmethodID can_frame_cstr = env->GetMethodID(can_frame_clazz,
 							"<init>", "(II[B)V");
 	if (can_frame_cstr == NULL) {
 		return NULL;
 	}
-	const jbyteArray data = (*env)->NewByteArray(env, fsize);
+	const jbyteArray data = env->NewByteArray(fsize);
 	if (data == NULL) {
-		if ((*env)->ExceptionCheck(env) != JNI_TRUE) {
+		if (env->ExceptionCheck() != JNI_TRUE) {
 			throwOutOfMemoryError(env, "could not allocate ByteArray");
 		}
 		return NULL;
 	}
-	(*env)->SetByteArrayRegion(env, data, (jsize)0, fsize, (jbyte *)&frame.data);
-	if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+	env->SetByteArrayRegion(data, (jsize)0, fsize, (jbyte *)&frame.data);
+	if (env->ExceptionCheck() == JNI_TRUE) {
 		return NULL;
 	}
-	const jobject ret = (*env)->NewObject(env, can_frame_clazz, can_frame_cstr,
+	const jobject ret = env->NewObject(can_frame_clazz, can_frame_cstr,
 					(jint)addr.can_ifindex, (jint)frame.can_id,
 					data);
 	return ret;
@@ -228,14 +228,14 @@ JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1fetchInterfaceMtu
 {
 	struct ifreq ifreq;
 
-	const jsize ifNameSize = (*env)->GetStringUTFLength(env, ifName);
+	const jsize ifNameSize = env->GetStringUTFLength(ifName);
 	if ((int)ifNameSize > IFNAMSIZ-1) {
 		throwIllegalArgumentException(env, "illegal interface name");
 		return (jint)-1;
 	}
 	memset((void *)&ifreq, 0x0, sizeof(ifreq));
-	(*env)->GetStringUTFRegion(env, ifName, (jsize)0, ifNameSize, ifreq.ifr_name);
-	if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+	env->GetStringUTFRegion(ifName, (jsize)0, ifNameSize, ifreq.ifr_name);
+	if (env->ExceptionCheck() == JNI_TRUE) {
 		return (jint)-1;
 	}
 	if (ioctl((int)fd, SIOCGIFMTU, &ifreq) == -1) {

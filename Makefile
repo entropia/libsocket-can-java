@@ -1,5 +1,5 @@
 SHELL=/bin/bash
-CC=gcc
+CXX=g++
 NAME:=libsocket-can-java
 
 ### JAVA_HOME
@@ -12,7 +12,7 @@ JAVAH=$(JAVA_HOME)/bin/javah
 JAR=$(JAVA_HOME)/bin/jar
 JAVA_SRC:=$(shell find src -type f -and -name '*.java')
 JAVA_TEST_SRC:=$(shell find src.test -type f -and -name '*.java')
-JNI_SRC:=$(shell find jni -type f -and -name '*.[ch]')
+JNI_SRC:=$(shell find jni -type f -and -regex '^.*\.\(c\|h\)$$')
 JAVA_DEST=classes
 JAVA_TEST_DEST=classes.test
 LIB_DEST=lib
@@ -22,10 +22,10 @@ DIRS=stamps $(JAVA_DEST) $(JAVA_TEST_DEST) $(LIB_DEST) $(JAR_DEST)
 JNI_DIR=jni
 JNI_CLASSES=de.entropia.can.CanSocket
 JAVAC_FLAGS=-g -Xlint:all
-define CFLAGS =
+define CXXFLAGS =
 -O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions \
 -fstack-protector --param=ssp-buffer-size=4 -fPIC \
--Wall -pedantic -std=gnu99 -D_REENTRANT -D_GNU_SOURCE \
+-Wall -pedantic -std=gnu++11 -D_REENTRANT -D_GNU_SOURCE \
 $(JAVA_INCLUDES)
 endef
 SONAME=jni_socketcan
@@ -61,7 +61,7 @@ stamps/generate-jni-h: stamps/compile-src
 	@touch $@
 
 stamps/compile-jni: stamps/generate-jni-h $(JNI_SRC)
-	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o $(LIB_DEST)/lib$(SONAME).so \
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $(LIB_DEST)/lib$(SONAME).so \
 		$(sort $(filter %.c,$(JNI_SRC)))
 	@touch $@
 
