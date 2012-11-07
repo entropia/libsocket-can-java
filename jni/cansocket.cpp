@@ -10,17 +10,9 @@
 #include <linux/can.h>
 #include <linux/can/raw.h>
 
+#include<algorithm>
+
 #include "de_entropia_can_CanSocket.h"
-
-#if !defined(CAN_MTU) || !defined(CANFD_MTU)
-#error "You are using old <linux/can.h> headers. Please consider to update."
-#endif
-
-#define min(a,b) ({				\
-			typeof(a) _a = (a);	\
-			typeof(b) _b = (b);	\
-			(void) (&_a == &_b);	\
-			_a < _b ? _a : _b; })
 
 static const int ERRNO_BUFFER_LEN = 1024;
 
@@ -194,7 +186,7 @@ JNIEXPORT jobject JNICALL Java_de_entropia_can_CanSocket__1recvFrame
 		throwIOExceptionMsg(env, "invalid length of received frame");
 		return NULL;
 	}
-	const jsize fsize = (jsize)min((size_t)frame.can_dlc,
+	const jsize fsize = (jsize)std::min((size_t)frame.can_dlc,
 				(size_t)nbytes - offsetof(struct can_frame, data));
 	const jclass can_frame_clazz = env->FindClass("de/entropia/can/"
 							"CanSocket$CanFrame");
