@@ -47,7 +47,7 @@ stamps/dirs:
 	@touch $@
 
 stamps/compile-src: stamps/dirs $(JAVA_SRC)
-	$(JAVAC) $(JAVAC_FLAGS) -d $(JAVA_DEST) $(JAVA_SRC)
+	$(JAVAC) $(JAVAC_FLAGS) -d $(JAVA_DEST) $(sort $(JAVA_SRC))
 	@touch $@
 
 stamps/compile-test: stamps/compile-src $(JAVA_TEST_SRC)
