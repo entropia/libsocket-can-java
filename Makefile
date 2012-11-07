@@ -12,7 +12,7 @@ JAVAH=$(JAVA_HOME)/bin/javah
 JAR=$(JAVA_HOME)/bin/jar
 JAVA_SRC:=$(shell find src -type f -and -name '*.java')
 JAVA_TEST_SRC:=$(shell find src.test -type f -and -name '*.java')
-JNI_SRC:=$(shell find jni -type f -and -regex '^.*\.\(c\|h\)$$')
+JNI_SRC:=$(shell find jni -type f -and -regex '^.*\.\(cpp\|h\)$$')
 JAVA_DEST=classes
 JAVA_TEST_DEST=classes.test
 LIB_DEST=lib
@@ -62,7 +62,7 @@ stamps/generate-jni-h: stamps/compile-src
 
 stamps/compile-jni: stamps/generate-jni-h $(JNI_SRC)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $(LIB_DEST)/lib$(SONAME).so \
-		$(sort $(filter %.c,$(JNI_SRC)))
+		$(sort $(filter %.cpp,$(JNI_SRC)))
 	@touch $@
 
 stamps/create-jar: stamps/compile-jni
