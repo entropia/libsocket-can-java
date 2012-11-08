@@ -10,25 +10,26 @@
 #include <linux/can.h>
 #include <linux/can/raw.h>
 
+#include<string>
 #include<algorithm>
 
 #include "de_entropia_can_CanSocket.h"
 
 static const int ERRNO_BUFFER_LEN = 1024;
 
-static void throwException(JNIEnv *env, const char *const exception_name,
-			const char *const msg)
+static void throwException(JNIEnv *env, const std::string&& exception_name,
+			const std::string&& msg)
 {
-	const jclass exception = env->FindClass(exception_name);
-	if (exception == NULL) {
+	const jclass exception = env->FindClass(exception_name.c_str());
+	if (exception == nullptr) {
 		return;
 	}
-	env->ThrowNew(exception, msg);
+	env->ThrowNew(exception, msg.c_str());
 }
 
-static void throwIOExceptionMsg(JNIEnv *env, const char *const msg)
+static void throwIOExceptionMsg(JNIEnv *env, const std::string&& msg)
 {
-	throwException(env, "java/io/IOException", msg);
+	throwException(env, "java/io/IOException", std::move(msg));
 }
 
 static void throwIOExceptionErrno(JNIEnv *env, const int exc_errno)
@@ -38,14 +39,14 @@ static void throwIOExceptionErrno(JNIEnv *env, const int exc_errno)
 	throwIOExceptionMsg(env, msg);
 }
 
-static void throwIllegalArgumentException(JNIEnv *env, const char *const message)
+static void throwIllegalArgumentException(JNIEnv *env, const std::string&& message)
 {
-	throwException(env, "java/lang/IllegalArgumentException", message);
+	throwException(env, "java/lang/IllegalArgumentException", std::move(message));
 }
 
-static void throwOutOfMemoryError(JNIEnv *env, const char *const message)
+static void throwOutOfMemoryError(JNIEnv *env, const std::string&& message)
 {
-	throwException(env, "java/lang/OutOfMemoryError", message);
+	throwException(env, "java/lang/OutOfMemoryError", std::move(message));
 }
 
 static jint newCanSocket(JNIEnv *env, int socket_type, int protocol)
@@ -114,7 +115,7 @@ JNIEXPORT jstring JNICALL Java_de_entropia_can_CanSocket__1discoverInterfaceName
 	ifreq.ifr_ifindex = (int)ifIdx;
 	if (ioctl((int)fd, SIOCGIFNAME, &ifreq) == -1) {
 		throwIOExceptionErrno(env, errno);
-		return NULL;
+		return nullptr;
 	}
 	const jstring ifname = env->NewStringUTF(ifreq.ifr_name);
 	return ifname;
@@ -177,37 +178,37 @@ JNIEXPORT jobject JNICALL Java_de_entropia_can_CanSocket__1recvFrame
 			(struct sockaddr *)&addr, &len);
 	if (len != sizeof(addr)) {
 		throwIllegalArgumentException(env, "illegal AF_CAN address");
-		return NULL;
+		return nullptr;
 	}
 	if (nbytes == -1) {
 		throwIOExceptionErrno(env, errno);
-		return NULL;
+		return nullptr;
 	} else if (nbytes != sizeof(frame)) {
 		throwIOExceptionMsg(env, "invalid length of received frame");
-		return NULL;
+		return nullptr;
 	}
 	const jsize fsize = (jsize)std::min((size_t)frame.can_dlc,
 				(size_t)nbytes - offsetof(struct can_frame, data));
 	const jclass can_frame_clazz = env->FindClass("de/entropia/can/"
 							"CanSocket$CanFrame");
-	if (can_frame_clazz == NULL) {
-		return NULL;
+	if (can_frame_clazz == nullptr) {
+		return nullptr;
 	}
 	const jmethodID can_frame_cstr = env->GetMethodID(can_frame_clazz,
 							"<init>", "(II[B)V");
-	if (can_frame_cstr == NULL) {
-		return NULL;
+	if (can_frame_cstr == nullptr) {
+		return nullptr;
 	}
 	const jbyteArray data = env->NewByteArray(fsize);
-	if (data == NULL) {
+	if (data == nullptr) {
 		if (env->ExceptionCheck() != JNI_TRUE) {
 			throwOutOfMemoryError(env, "could not allocate ByteArray");
 		}
-		return NULL;
+		return nullptr;
 	}
 	env->SetByteArrayRegion(data, (jsize)0, fsize, (jbyte *)&frame.data);
 	if (env->ExceptionCheck() == JNI_TRUE) {
-		return NULL;
+		return nullptr;
 	}
 	const jobject ret = env->NewObject(can_frame_clazz, can_frame_cstr,
 					(jint)addr.can_ifindex, (jint)frame.can_id,
