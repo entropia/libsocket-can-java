@@ -12,6 +12,7 @@
 
 #include<string>
 #include<algorithm>
+#include<utility>
 
 #include "de_entropia_can_CanSocket.h"
 
