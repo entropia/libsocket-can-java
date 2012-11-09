@@ -54,10 +54,10 @@ static jint newCanSocket(JNIEnv *env, int socket_type, int protocol)
 {
 	const int fd = socket(PF_CAN, socket_type, protocol);
 	if (fd != -1) {
-		return (jint)fd;
+		return fd;
 	}
 	throwIOExceptionErrno(env, errno);
-	return (jint)-1;
+	return -1;
 }
 
 JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1openSocketRAW
@@ -76,7 +76,7 @@ JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1openSocketBCM
 JNIEXPORT void JNICALL Java_de_entropia_can_CanSocket__1close
 (JNIEnv *env, jobject obj, jint fd)
 {
-	if (close((int)fd) == -1) {
+	if (close(fd) == -1) {
 		throwIOExceptionErrno(env, errno);
 	}
 }
@@ -86,25 +86,25 @@ JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1discoverInterfaceIndex
 {
 	struct ifreq ifreq;
 	const jsize ifNameSize = env->GetStringUTFLength(ifName);
-	if ((int)ifNameSize > IFNAMSIZ-1) {
+	if (ifNameSize > IFNAMSIZ-1) {
 		throwIllegalArgumentException(env, "illegal interface name");
-		return (jint)-1;
+		return -1;
 	}
 	
 	/* fetch interface name */
-	memset((void *)&ifreq, 0x0, sizeof(ifreq));
-	env->GetStringUTFRegion(ifName, (jsize)0, (jsize)ifNameSize,
+	memset(&ifreq, 0x0, sizeof(ifreq));
+	env->GetStringUTFRegion(ifName, 0, ifNameSize,
 				ifreq.ifr_name);	
 	if (env->ExceptionCheck() == JNI_TRUE) {
-		return (jint)-1;
+		return -1;
 	}
 	/* discover interface id */
-	const int err = ioctl((int)socketFd, SIOCGIFINDEX, &ifreq);
+	const int err = ioctl(socketFd, SIOCGIFINDEX, &ifreq);
 	if (err == -1) {
 		throwIOExceptionErrno(env, errno);
-		return (jint)-1;
+		return -1;
 	} else {
-		return (jint)ifreq.ifr_ifindex;
+		return ifreq.ifr_ifindex;
 	}
 }
 
@@ -112,9 +112,9 @@ JNIEXPORT jstring JNICALL Java_de_entropia_can_CanSocket__1discoverInterfaceName
 (JNIEnv *env, jclass obj, jint fd, jint ifIdx)
 {
 	struct ifreq ifreq;
-	memset((void *)&ifreq, 0x0, sizeof(ifreq));
-	ifreq.ifr_ifindex = (int)ifIdx;
-	if (ioctl((int)fd, SIOCGIFNAME, &ifreq) == -1) {
+	memset(&ifreq, 0x0, sizeof(ifreq));
+	ifreq.ifr_ifindex = ifIdx;
+	if (ioctl(fd, SIOCGIFNAME, &ifreq) == -1) {
 		throwIOExceptionErrno(env, errno);
 		return nullptr;
 	}
@@ -128,8 +128,8 @@ JNIEXPORT void JNICALL Java_de_entropia_can_CanSocket__1bindToSocket
 {
 	struct sockaddr_can addr;
 	addr.can_family = AF_CAN;
-	addr.can_ifindex = (int)ifIndex;
-	if (bind((int)fd, (struct sockaddr *)&addr, sizeof(addr)) != 0) {
+	addr.can_ifindex = ifIndex;
+	if (bind(fd, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr)) != 0) {
 		throwIOExceptionErrno(env, errno);
 	}
 }
@@ -138,25 +138,26 @@ JNIEXPORT void JNICALL Java_de_entropia_can_CanSocket__1sendFrame
 (JNIEnv *env, jclass obj, jint fd, jint if_idx, jint canid, jbyteArray data)
 {
 	const int flags = 0;
-	int nbytes;
+	ssize_t nbytes;
 	struct sockaddr_can addr;
 	struct can_frame frame;
 	memset(&addr, 0, sizeof(addr));
 	memset(&frame, 0, sizeof(frame));
 	addr.can_family = AF_CAN;
-	addr.can_ifindex = (int)if_idx;
+	addr.can_ifindex = if_idx;
 	const jsize len = env->GetArrayLength(data);
 	if (env->ExceptionCheck() == JNI_TRUE) {
 		return;
 	}
-	frame.can_id = (canid_t)canid;
-	frame.can_dlc = (__u8)len;
-	env->GetByteArrayRegion(data, 0, len, (jbyte *)&frame.data);
+	frame.can_id = canid;
+	frame.can_dlc = static_cast<__u8>(len);
+	env->GetByteArrayRegion(data, 0, len, reinterpret_cast<jbyte *>(&frame.data));
 	if (env->ExceptionCheck() == JNI_TRUE) {
 		return;
 	}
-	nbytes = sendto((int)fd, &frame, sizeof(frame), flags,
-			(struct sockaddr *)&addr, sizeof(addr));
+	nbytes = sendto(fd, &frame, sizeof(frame), flags,
+			reinterpret_cast<struct sockaddr *>(&addr),
+			sizeof(addr));
 	if (nbytes == -1) {
 		throwIOExceptionErrno(env, errno);
 	} else if (nbytes != sizeof(frame)) {
@@ -168,15 +169,15 @@ JNIEXPORT jobject JNICALL Java_de_entropia_can_CanSocket__1recvFrame
 (JNIEnv *env, jclass obj, jint fd)
 {
 	const int flags = 0;
-	int nbytes;
+	ssize_t nbytes;
 	struct sockaddr_can addr;
 	socklen_t len = sizeof(addr);
 	struct can_frame frame;
 
 	memset(&addr, 0, sizeof(addr));
 	memset(&frame, 0, sizeof(frame));
-	nbytes = recvfrom((int)fd, &frame, sizeof(frame), flags,
-			(struct sockaddr *)&addr, &len);
+	nbytes = recvfrom(fd, &frame, sizeof(frame), flags,
+			  reinterpret_cast<struct sockaddr *>(&addr), &len);
 	if (len != sizeof(addr)) {
 		throwIllegalArgumentException(env, "illegal AF_CAN address");
 		return nullptr;
@@ -188,8 +189,8 @@ JNIEXPORT jobject JNICALL Java_de_entropia_can_CanSocket__1recvFrame
 		throwIOExceptionMsg(env, "invalid length of received frame");
 		return nullptr;
 	}
-	const jsize fsize = (jsize)std::min((size_t)frame.can_dlc,
-				(size_t)nbytes - offsetof(struct can_frame, data));
+	const jsize fsize = static_cast<jsize>(std::min(static_cast<size_t>(frame.can_dlc),
+							nbytes - offsetof(struct can_frame, data)));
 	const jclass can_frame_clazz = env->FindClass("de/entropia/can/"
 							"CanSocket$CanFrame");
 	if (can_frame_clazz == nullptr) {
@@ -207,13 +208,13 @@ JNIEXPORT jobject JNICALL Java_de_entropia_can_CanSocket__1recvFrame
 		}
 		return nullptr;
 	}
-	env->SetByteArrayRegion(data, (jsize)0, fsize, (jbyte *)&frame.data);
+	env->SetByteArrayRegion(data, 0, fsize, reinterpret_cast<jbyte *>(&frame.data));
 	if (env->ExceptionCheck() == JNI_TRUE) {
 		return nullptr;
 	}
 	const jobject ret = env->NewObject(can_frame_clazz, can_frame_cstr,
-					(jint)addr.can_ifindex, (jint)frame.can_id,
-					data);
+					   addr.can_ifindex, frame.can_id,
+					   data);
 	return ret;
 }
 
@@ -223,28 +224,28 @@ JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1fetchInterfaceMtu
 	struct ifreq ifreq;
 
 	const jsize ifNameSize = env->GetStringUTFLength(ifName);
-	if ((int)ifNameSize > IFNAMSIZ-1) {
+	if (ifNameSize > IFNAMSIZ-1) {
 		throwIllegalArgumentException(env, "illegal interface name");
-		return (jint)-1;
+		return -1;
 	}
-	memset((void *)&ifreq, 0x0, sizeof(ifreq));
-	env->GetStringUTFRegion(ifName, (jsize)0, ifNameSize, ifreq.ifr_name);
+	memset(&ifreq, 0x0, sizeof(ifreq));
+	env->GetStringUTFRegion(ifName, 0, ifNameSize, ifreq.ifr_name);
 	if (env->ExceptionCheck() == JNI_TRUE) {
-		return (jint)-1;
+		return -1;
 	}
-	if (ioctl((int)fd, SIOCGIFMTU, &ifreq) == -1) {
+	if (ioctl(fd, SIOCGIFMTU, &ifreq) == -1) {
 		throwIOExceptionErrno(env, errno);
-		return (jint)-1;
+		return -1;
 	} else {
-		return (jint)ifreq.ifr_mtu;
+		return ifreq.ifr_mtu;
 	}
 }
 
 JNIEXPORT void JNICALL Java_de_entropia_can_CanSocket__1setsockopt
 (JNIEnv *env, jclass obj, jint fd, jint op, jint stat)
 {
-	const int _stat = (int)stat;
-	if (setsockopt((int)fd, SOL_CAN_RAW, (int)op, &_stat, sizeof(_stat)) == -1) {
+	const int _stat = stat;
+	if (setsockopt(fd, SOL_CAN_RAW, op, &_stat, sizeof(_stat)) == -1) {
 		throwIOExceptionErrno(env, errno);
 	}
 }
@@ -254,14 +255,14 @@ JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1getsockopt
 {
 	int _stat = 0;
 	socklen_t len = sizeof(_stat);
-	if (getsockopt((int)fd, SOL_CAN_RAW, (int)op, &_stat, &len) == -1) {
+	if (getsockopt(fd, SOL_CAN_RAW, op, &_stat, &len) == -1) {
 		throwIOExceptionErrno(env, errno);
 	}
 	if (len != sizeof(_stat)) {
 		throwIllegalArgumentException(env, "setsockopt return size is different");
-		return (jint)-1;
+		return -1;
 	}
-	return (jint)_stat;
+	return _stat;
 }
 
 
@@ -270,44 +271,44 @@ JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1getsockopt
 JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1fetch_1CAN_1MTU
 (JNIEnv *env, jclass obj)
 {
-	return (jint)CAN_MTU;
+	return CAN_MTU;
 }
 
 JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1fetch_1CAN_1FD_1MTU
 (JNIEnv *env, jclass obj)
 {
-	return (jint)CANFD_MTU;
+	return CANFD_MTU;
 }
 
 /*** ioctls ***/
 JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1fetch_1CAN_1RAW_1FILTER
 (JNIEnv *env, jclass obj)
 {
-	return (jint)CAN_RAW_FILTER;
+	return CAN_RAW_FILTER;
 }
 
 JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1fetch_1CAN_1RAW_1ERR_1FILTER
 (JNIEnv *env, jclass obj)
 {
-	return (jint)CAN_RAW_ERR_FILTER;
+	return CAN_RAW_ERR_FILTER;
 }
 
 JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1fetch_1CAN_1RAW_1LOOPBACK
 (JNIEnv *env, jclass obj)
 {
-	return (jint)CAN_RAW_LOOPBACK;
+	return CAN_RAW_LOOPBACK;
 }
 
 JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1fetch_1CAN_1RAW_1RECV_1OWN_1MSGS
 (JNIEnv *env, jclass obj)
 {
-	return (jint)CAN_RAW_RECV_OWN_MSGS;
+	return CAN_RAW_RECV_OWN_MSGS;
 }
 
 JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1fetch_1CAN_1RAW_1FD_1FRAMES
 (JNIEnv *env, jclass obj)
 {
-	return (jint)CAN_RAW_FD_FRAMES;
+	return CAN_RAW_FD_FRAMES;
 }
 
 /*** ADR MANIPULATION FUNCTIONS ***/
@@ -315,19 +316,19 @@ JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1fetch_1CAN_1RAW_1FD_1FRA
 JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1getCANID_1SFF
 (JNIEnv *env, jclass obj, jint canid)
 {
-	return (jint)(canid & CAN_SFF_MASK);
+	return canid & CAN_SFF_MASK;
 }
 
 JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1getCANID_1EFF
 (JNIEnv *env, jclass obj, jint canid)
 {
-	return (jint)(canid & CAN_EFF_MASK);
+	return canid & CAN_EFF_MASK;
 }
 
 JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1getCANID_1ERR
 (JNIEnv *env, jclass obj, jint canid)
 {
-	return (jint)(canid & CAN_ERR_MASK);
+	return canid & CAN_ERR_MASK;
 }
 
 JNIEXPORT jboolean JNICALL Java_de_entropia_can_CanSocket__1isSetEFFSFF
@@ -351,35 +352,35 @@ JNIEXPORT jboolean JNICALL Java_de_entropia_can_CanSocket__1isSetERR
 JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1setEFFSFF
 (JNIEnv *env, jclass obj, jint canid)
 {
-	return (jint)(canid | CAN_EFF_FLAG);
+	return canid | CAN_EFF_FLAG;
 }
 
 JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1setRTR
 (JNIEnv *env, jclass obj, jint canid)
 {
-	return (jint)(canid | CAN_RTR_FLAG);
+	return canid | CAN_RTR_FLAG;
 }
 
 JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1setERR
 (JNIEnv *env, jclass obj, jint canid)
 {
-	return (jint)(canid | CAN_ERR_FLAG);
+	return canid | CAN_ERR_FLAG;
 }
 
 JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1clearEFFSFF
 (JNIEnv *env, jclass obj, jint canid)
 {
-	return (jint)(canid & ~CAN_EFF_FLAG);
+	return canid & ~CAN_EFF_FLAG;
 }
 
 JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1clearRTR
 (JNIEnv *env, jclass obj, jint canid)
 {
-	return (jint)(canid & ~CAN_RTR_FLAG);
+	return canid & ~CAN_RTR_FLAG;
 }
 
 JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1clearERR
 (JNIEnv *env, jclass obj, jint canid)
 {
-	return (jint)(canid & ~CAN_ERR_FLAG);
+	return canid & ~CAN_ERR_FLAG;
 }
