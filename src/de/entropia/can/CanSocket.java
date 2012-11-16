@@ -252,7 +252,7 @@ public final class CanSocket implements Closeable {
         
         private CanInterface(int ifIndex, String ifName) {
             this._ifIndex = ifIndex;
-            this._ifName = null;
+            this._ifName = ifName;
         }
         
         private CanInterface(int ifIndex) {
