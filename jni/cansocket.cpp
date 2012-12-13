@@ -16,6 +16,22 @@
 
 #include "de_entropia_can_CanSocket.h"
 
+#if !defined(CAN_MTU) || !defined(CANFD_MTU) || !defined(CAN_RAW_FD_FRAMES)
+#warning "CAN FD support only available since v3.6. Please consider to update."
+#endif
+
+#if !defined(CAN_MTU)
+#define CAN_MTU (sizeof(struct can_frame))
+#endif
+
+#if !defined(CANFD_MTU)
+#define CANFD_MTU 0x48
+#endif
+
+#if !defined(CAN_RAW_FD_FRAMES)
+#define CAN_RAW_FD_FRAMES 0x5
+#endif
+
 static const int ERRNO_BUFFER_LEN = 1024;
 
 static void throwException(JNIEnv *env, const std::string&& exception_name,
