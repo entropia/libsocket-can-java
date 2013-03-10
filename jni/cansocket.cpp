@@ -206,7 +206,7 @@ JNIEXPORT jobject JNICALL Java_de_entropia_can_CanSocket__1recvFrame
 		return nullptr;
 	}
 	const jsize fsize = static_cast<jsize>(std::min(static_cast<size_t>(frame.can_dlc),
-							nbytes - offsetof(struct can_frame, data)));
+							static_cast<size_t>(nbytes - offsetof(struct can_frame, data))));
 	const jclass can_frame_clazz = env->FindClass("de/entropia/can/"
 							"CanSocket$CanFrame");
 	if (can_frame_clazz == nullptr) {
