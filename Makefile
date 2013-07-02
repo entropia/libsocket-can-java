@@ -3,7 +3,7 @@ CXX=g++
 NAME:=libsocket-can-java
 
 ### JAVA_HOME
-JAVA_HOME=$(shell readlink -f /etc/alternatives/java_sdk)
+JAVA_HOME=$(shell readlink -f /usr/bin/javac | sed "s:bin/javac::")
 
 JAVA_INCLUDES=-I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
 JAVA=$(JAVA_HOME)/bin/java
@@ -22,12 +22,10 @@ DIRS=stamps $(JAVA_DEST) $(JAVA_TEST_DEST) $(LIB_DEST) $(JAR_DEST)
 JNI_DIR=jni
 JNI_CLASSES=de.entropia.can.CanSocket
 JAVAC_FLAGS=-g -Xlint:all
-define CXXFLAGS =
--O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions \
+CXXFLAGS=-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions \
 -fstack-protector --param=ssp-buffer-size=4 -fPIC \
 -Wall -pedantic -std=gnu++11 -D_REENTRANT -D_GNU_SOURCE \
 $(JAVA_INCLUDES)
-endef
 SONAME=jni_socketcan
 LDFLAGS=-Wl,-soname,$(SONAME)
 
