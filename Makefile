@@ -22,7 +22,7 @@ DIRS=stamps $(JAVA_DEST) $(JAVA_TEST_DEST) $(LIB_DEST) $(JAR_DEST)
 JNI_DIR=jni
 JNI_CLASSES=de.entropia.can.CanSocket
 JAVAC_FLAGS=-g -Xlint:all
-CXXFLAGS=-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions \
+CXXFLAGS=-I./include -O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions \
 -fstack-protector --param=ssp-buffer-size=4 -fPIC \
 -Wall -pedantic -std=gnu++11 -D_REENTRANT -D_GNU_SOURCE \
 $(JAVA_INCLUDES)
