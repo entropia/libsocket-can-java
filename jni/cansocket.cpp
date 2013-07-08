@@ -36,8 +36,22 @@ static void throwIOExceptionMsg(JNIEnv *env, const std::string&& msg)
 static void throwIOExceptionErrno(JNIEnv *env, const int exc_errno)
 {
 	char message[ERRNO_BUFFER_LEN];
-	const char *const msg = strerror_r(exc_errno, message, ERRNO_BUFFER_LEN);
-	throwIOExceptionMsg(env, msg);
+	const char *const msg = (char *) strerror_r(exc_errno, message, ERRNO_BUFFER_LEN);
+	if (((int)msg) == 0) {
+		// POSIX strerror_r, success
+		throwIOExceptionMsg(env, message);
+	} else if (((int)msg) == -1) {
+		// POSIX strerror_r, failure
+		// (Strictly, POSIX only guarantees a value other than 0. The safest
+		// way to implement this function is to use C++ and overload on the
+		// type of strerror_r to accurately distinguish GNU from POSIX. But
+		// realistic implementations will always return -1.)
+		snprintf(message, ERRNO_BUFFER_LEN, "errno %d", exc_errno);
+		throwIOExceptionMsg(env, message);
+	} else {
+		// glibc strerror_r returning a string
+		throwIOExceptionMsg(env, msg);
+	}
 }
 
 static void throwIllegalArgumentException(JNIEnv *env, const std::string&& message)
@@ -90,11 +104,11 @@ JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1discoverInterfaceIndex
 		throwIllegalArgumentException(env, "illegal interface name");
 		return -1;
 	}
-	
+
 	/* fetch interface name */
 	memset(&ifreq, 0x0, sizeof(ifreq));
 	env->GetStringUTFRegion(ifName, 0, ifNameSize,
-				ifreq.ifr_name);	
+				ifreq.ifr_name);
 	if (env->ExceptionCheck() == JNI_TRUE) {
 		return -1;
 	}
