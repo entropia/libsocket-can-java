@@ -14,7 +14,11 @@
 #include<algorithm>
 #include<utility>
 
+#if defined(ANDROID) || defined(__ANDROID__)
+#include "jni.h"
+#else
 #include "de_entropia_can_CanSocket.h"
+#endif
 
 static const int ERRNO_BUFFER_LEN = 1024;
 
