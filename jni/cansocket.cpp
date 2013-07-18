@@ -41,10 +41,10 @@ static void throwIOExceptionErrno(JNIEnv *env, const int exc_errno)
 {
 	char message[ERRNO_BUFFER_LEN];
 	const char *const msg = (char *) strerror_r(exc_errno, message, ERRNO_BUFFER_LEN);
-	if (((int)msg) == 0) {
+	if (((long)msg) == 0) {
 		// POSIX strerror_r, success
 		throwIOExceptionMsg(env, message);
-	} else if (((int)msg) == -1) {
+	} else if (((long)msg) == -1) {
 		// POSIX strerror_r, failure
 		// (Strictly, POSIX only guarantees a value other than 0. The safest
 		// way to implement this function is to use C++ and overload on the
