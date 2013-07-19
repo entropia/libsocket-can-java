@@ -26,7 +26,7 @@ JNI_CLASSES=de.entropia.can.CanSocket
 JAVAC_FLAGS=-g -Xlint:all
 CXXFLAGS=-I./include -O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions \
 -fstack-protector --param=ssp-buffer-size=4 -fPIC \
--pedantic -std=gnu++11 -D_REENTRANT -D_GNU_SOURCE \
+-pedantic -D_REENTRANT -D_GNU_SOURCE \
 $(JAVA_INCLUDES)
 SONAME=jni_socketcan
 LDFLAGS=-Wl,-soname,$(SONAME)
