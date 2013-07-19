@@ -22,8 +22,8 @@
 
 static const int ERRNO_BUFFER_LEN = 1024;
 
-static void throwException(JNIEnv *env, const std::string&& exception_name,
-			const std::string&& msg)
+static void throwException(JNIEnv *env, const std::string& exception_name,
+			   const std::string& msg)
 {
 	const jclass exception = env->FindClass(exception_name.c_str());
 	if (exception == nullptr) {
@@ -32,9 +32,9 @@ static void throwException(JNIEnv *env, const std::string&& exception_name,
 	env->ThrowNew(exception, msg.c_str());
 }
 
-static void throwIOExceptionMsg(JNIEnv *env, const std::string&& msg)
+static void throwIOExceptionMsg(JNIEnv *env, const std::string& msg)
 {
-	throwException(env, "java/io/IOException", std::move(msg));
+	throwException(env, "java/io/IOException", msg);
 }
 
 static void throwIOExceptionErrno(JNIEnv *env, const int exc_errno)
@@ -58,14 +58,14 @@ static void throwIOExceptionErrno(JNIEnv *env, const int exc_errno)
 	}
 }
 
-static void throwIllegalArgumentException(JNIEnv *env, const std::string&& message)
+static void throwIllegalArgumentException(JNIEnv *env, const std::string& message)
 {
-	throwException(env, "java/lang/IllegalArgumentException", std::move(message));
+    	throwException(env, "java/lang/IllegalArgumentException", message);
 }
 
-static void throwOutOfMemoryError(JNIEnv *env, const std::string&& message)
+static void throwOutOfMemoryError(JNIEnv *env, const std::string& message)
 {
-	throwException(env, "java/lang/OutOfMemoryError", std::move(message));
+    	throwException(env, "java/lang/OutOfMemoryError", message);
 }
 
 static jint newCanSocket(JNIEnv *env, int socket_type, int protocol)
