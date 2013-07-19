@@ -60,7 +60,7 @@ static void throwIOExceptionErrno(JNIEnv *env, const int exc_errno)
 
 static void throwIllegalArgumentException(JNIEnv *env, const std::string& message)
 {
-    	throwException(env, "java/lang/IllegalArgumentException", message);
+	throwException(env, "java/lang/IllegalArgumentException", message);
 }
 
 static void throwOutOfMemoryError(JNIEnv *env, const std::string& message)
