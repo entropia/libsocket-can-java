@@ -54,7 +54,7 @@ static void throwIOExceptionErrno(JNIEnv *env, const int exc_errno)
 		// type of strerror_r to accurately distinguish GNU from POSIX. But
 		// realistic implementations will always return -1.)
 		snprintf(message, ERRNO_BUFFER_LEN, "errno %d", exc_errno);
-		throwIOExceptionMsg(env, message);
+		throwIOExceptionMsg(env, std::string(message));
 	} else {
 		// glibc strerror_r returning a string
 		throwIOExceptionMsg(env, std::string(msg));
