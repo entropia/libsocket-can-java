@@ -46,7 +46,7 @@ static void throwIOExceptionErrno(JNIEnv *env, const int exc_errno)
 	const char *const msg = (char *) strerror_r(exc_errno, message, ERRNO_BUFFER_LEN);
 	if (((long)msg) == 0) {
 		// POSIX strerror_r, success
-		throwIOExceptionMsg(env, message);
+		throwIOExceptionMsg(env, std::string(message));
 	} else if (((long)msg) == -1) {
 		// POSIX strerror_r, failure
 		// (Strictly, POSIX only guarantees a value other than 0. The safest
@@ -57,7 +57,7 @@ static void throwIOExceptionErrno(JNIEnv *env, const int exc_errno)
 		throwIOExceptionMsg(env, message);
 	} else {
 		// glibc strerror_r returning a string
-		throwIOExceptionMsg(env, msg);
+		throwIOExceptionMsg(env, std::string(msg));
 	}
 }
 
