@@ -1,18 +1,21 @@
+#include<string>
+#include<algorithm>
+#include<utility>
+
+#include<cstring>
+#include<cstddef>
+#include<cerrno>
+
+extern "C" {
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#include <stddef.h>
 
 #include <net/if.h>
 #include <linux/can.h>
 #include <linux/can/raw.h>
-
-#include<string>
-#include<algorithm>
-#include<utility>
+}
 
 #if defined(ANDROID) || defined(__ANDROID__)
 #include "jni.h"
@@ -26,7 +29,7 @@ static void throwException(JNIEnv *env, const std::string& exception_name,
 			   const std::string& msg)
 {
 	const jclass exception = env->FindClass(exception_name.c_str());
-	if (exception == nullptr) {
+	if (exception == NULL) {
 		return;
 	}
 	env->ThrowNew(exception, msg.c_str());
@@ -134,7 +137,7 @@ JNIEXPORT jstring JNICALL Java_de_entropia_can_CanSocket__1discoverInterfaceName
 	ifreq.ifr_ifindex = ifIdx;
 	if (ioctl(fd, SIOCGIFNAME, &ifreq) == -1) {
 		throwIOExceptionErrno(env, errno);
-		return nullptr;
+		return NULL;
 	}
 	const jstring ifname = env->NewStringUTF(ifreq.ifr_name);
 	return ifname;
@@ -198,37 +201,37 @@ JNIEXPORT jobject JNICALL Java_de_entropia_can_CanSocket__1recvFrame
 			  reinterpret_cast<struct sockaddr *>(&addr), &len);
 	if (len != sizeof(addr)) {
 		throwIllegalArgumentException(env, "illegal AF_CAN address");
-		return nullptr;
+		return NULL;
 	}
 	if (nbytes == -1) {
 		throwIOExceptionErrno(env, errno);
-		return nullptr;
+		return NULL;
 	} else if (nbytes != sizeof(frame)) {
 		throwIOExceptionMsg(env, "invalid length of received frame");
-		return nullptr;
+		return NULL;
 	}
 	const jsize fsize = static_cast<jsize>(std::min(static_cast<size_t>(frame.can_dlc),
 							static_cast<size_t>(nbytes - offsetof(struct can_frame, data))));
 	const jclass can_frame_clazz = env->FindClass("de/entropia/can/"
 							"CanSocket$CanFrame");
-	if (can_frame_clazz == nullptr) {
-		return nullptr;
+	if (can_frame_clazz == NULL) {
+		return NULL;
 	}
 	const jmethodID can_frame_cstr = env->GetMethodID(can_frame_clazz,
 							"<init>", "(II[B)V");
-	if (can_frame_cstr == nullptr) {
-		return nullptr;
+	if (can_frame_cstr == NULL) {
+		return NULL;
 	}
 	const jbyteArray data = env->NewByteArray(fsize);
-	if (data == nullptr) {
+	if (data == NULL) {
 		if (env->ExceptionCheck() != JNI_TRUE) {
 			throwOutOfMemoryError(env, "could not allocate ByteArray");
 		}
-		return nullptr;
+		return NULL;
 	}
 	env->SetByteArrayRegion(data, 0, fsize, reinterpret_cast<jbyte *>(&frame.data));
 	if (env->ExceptionCheck() == JNI_TRUE) {
-		return nullptr;
+		return NULL;
 	}
 	const jobject ret = env->NewObject(can_frame_clazz, can_frame_cstr,
 					   addr.can_ifindex, frame.can_id,
