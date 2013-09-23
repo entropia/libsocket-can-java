@@ -95,7 +95,7 @@ JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1openSocketBCM
 }
 
 JNIEXPORT void JNICALL Java_de_entropia_can_CanSocket__1close
-(JNIEnv *env, jobject obj, jint fd)
+(JNIEnv *env, jclass obj, jint fd)
 {
 	if (close(fd) == -1) {
 		throwIOExceptionErrno(env, errno);
