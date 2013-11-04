@@ -1,26 +1,22 @@
 package de.entropia.can;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.Objects;
 import java.util.Set;
 
 public final class CanSocket implements Closeable {
     static {
-        final String LIB_JNI_SOCKETCAN = "jni_socketcan";
+        final String LIB_JNI_SOCKETCAN = "cansocket";
         try {
+            System.loadLibrary( "gnustl_shared" );
             System.loadLibrary(LIB_JNI_SOCKETCAN);
         } catch (final UnsatisfiedLinkError e) {
             try {
@@ -40,30 +36,37 @@ public final class CanSocket implements Closeable {
         }
     }
 
-    private static void loadLibFromJar(final String libName)
-            throws IOException {
-        Objects.requireNonNull(libName);
+    private static void loadLibFromJar(final String libName) throws IOException {
+        if( libName == null ) {
+            throw new IllegalArgumentException( "libName argument cannot be null." );
+        }
         final String fileName = "/lib/lib" + libName + ".so";
-        final FileAttribute<Set<PosixFilePermission>> permissions =
-                PosixFilePermissions.asFileAttribute(
-                        PosixFilePermissions.fromString("rw-------"));
-        final Path tempSo = Files.createTempFile(CanSocket.class.getName(),
-                ".so", permissions);
+        File tempSo = File.createTempFile(CanSocket.class.getName(), ".so");
+        tempSo.setExecutable( false );
+        tempSo.setWritable( true, true );
+        tempSo.setReadable( true,  true );
         try {
-            try (final InputStream libstream =
-                    CanSocket.class.getResourceAsStream(fileName)) {
-                if (libstream == null) {
-                    throw new FileNotFoundException("jar:*!" + fileName);
-                }
-                try (final OutputStream fout = Files.newOutputStream(tempSo,
-                        StandardOpenOption.WRITE,
-                        StandardOpenOption.TRUNCATE_EXISTING)) {
+        	final InputStream libstream =
+                    CanSocket.class.getResourceAsStream(fileName);
+            if (libstream == null) {
+                throw new FileNotFoundException("jar:*!" + fileName);
+            }
+
+            try {
+            	final OutputStream fout = new FileOutputStream(tempSo, false );
+                try {
                     copyStream(libstream, fout);
                 }
+                finally {
+                	fout.close();
+                }
+            }
+            finally {
+            	libstream.close();
             }
             System.load(tempSo.toString());
         } finally {
-            Files.delete(tempSo);
+        	tempSo.delete();
         }
     }
 
