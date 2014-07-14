@@ -20,6 +20,7 @@ JAVA_TEST_DEST=classes.test
 LIB_DEST=lib
 JAR_DEST=dist
 JAR_DEST_FILE=$(JAR_DEST)/$(NAME).jar
+JAR_MANIFEST_FILE=META-INF/MANIFEST.MF
 DIRS=stamps obj $(JAVA_DEST) $(JAVA_TEST_DEST) $(LIB_DEST) $(JAR_DEST)
 JNI_DIR=jni
 JNI_CLASSES=de.entropia.can.CanSocket
@@ -66,7 +67,7 @@ stamps/compile-jni: stamps/generate-jni-h $(JNI_SRC)
 	@touch $@
 
 stamps/create-jar: stamps/compile-jni
-	$(JAR) cMf $(JAR_DEST_FILE) lib -C $(JAVA_DEST) .
+	$(JAR) cMf $(JAR_DEST_FILE) $(JAR_MANIFEST_FILE) lib -C $(JAVA_DEST) .
 	@touch $@
 
 .PHONY: check
