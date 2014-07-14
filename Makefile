@@ -7,7 +7,7 @@ ifndef JAVA_HOME
 	JAVA_HOME=$(shell readlink -f /usr/bin/javac | sed "s:bin/javac::")
 endif
 
-JAVA_INCLUDES=-I$(JAVA_HOME)/include
+JAVA_INCLUDES=-I$(JAVA_HOME)/include/linux -I$(JAVA_HOME)/include
 JAVA=$(JAVA_HOME)/bin/java
 JAVAC=$(JAVA_HOME)/bin/javac
 JAVAH=$(JAVA_HOME)/bin/javah
