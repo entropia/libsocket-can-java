@@ -7,7 +7,7 @@ ifndef JAVA_HOME
 	JAVA_HOME=$(shell readlink -f /usr/bin/javac | sed "s:bin/javac::")
 endif
 
-JAVA_INCLUDES=-I$(JAVA_HOME)/include
+JAVA_INCLUDES=-I$(JAVA_HOME)/include/linux -I$(JAVA_HOME)/include
 JAVA=$(JAVA_HOME)/bin/java
 JAVAC=$(JAVA_HOME)/bin/javac
 JAVAH=$(JAVA_HOME)/bin/javah
@@ -20,6 +20,7 @@ JAVA_TEST_DEST=classes.test
 LIB_DEST=lib
 JAR_DEST=dist
 JAR_DEST_FILE=$(JAR_DEST)/$(NAME).jar
+JAR_MANIFEST_FILE=META-INF/MANIFEST.MF
 DIRS=stamps obj $(JAVA_DEST) $(JAVA_TEST_DEST) $(LIB_DEST) $(JAR_DEST)
 JNI_DIR=jni
 JNI_CLASSES=de.entropia.can.CanSocket
@@ -65,8 +66,8 @@ stamps/compile-jni: stamps/generate-jni-h $(JNI_SRC)
 		$(sort $(filter %.cpp,$(JNI_SRC)))
 	@touch $@
 
-stamps/create-jar: stamps/compile-jni
-	$(JAR) cMf $(JAR_DEST_FILE) lib -C $(JAVA_DEST) .
+stamps/create-jar: stamps/compile-jni $(JAR_MANIFEST_FILE)
+	$(JAR) cMf $(JAR_DEST_FILE) $(JAR_MANIFEST_FILE) lib -C $(JAVA_DEST) .
 	@touch $@
 
 .PHONY: check
