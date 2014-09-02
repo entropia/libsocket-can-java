@@ -66,7 +66,7 @@ stamps/compile-jni: stamps/generate-jni-h $(JNI_SRC)
 		$(sort $(filter %.cpp,$(JNI_SRC)))
 	@touch $@
 
-stamps/create-jar: stamps/compile-jni
+stamps/create-jar: stamps/compile-jni $(JAR_MANIFEST_FILE)
 	$(JAR) cMf $(JAR_DEST_FILE) $(JAR_MANIFEST_FILE) lib -C $(JAVA_DEST) .
 	@touch $@
 
