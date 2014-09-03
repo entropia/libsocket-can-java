@@ -18,6 +18,11 @@ extern "C" {
 }
 
 #if defined(ANDROID) || defined(__ANDROID__)
+// As of Nov. 2013 the Android-NDK does not build against an updated sys/socket.h
+// AF_CAN and PF_CAN are not defined, causing a compilation error.
+// uncomment the following #define directives to remedy that issue if you're building against an old sys/socket.h
+// #define AF_CAN 29
+// #define PF_CAN AF_CAN
 #include "jni.h"
 #else
 #include "de_entropia_can_CanSocket.h"
@@ -80,6 +85,11 @@ static jint newCanSocket(JNIEnv *env, int socket_type, int protocol)
 	throwIOExceptionErrno(env, errno);
 	return -1;
 }
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1openSocketRAW
 (JNIEnv *env, jclass obj)
@@ -405,3 +415,7 @@ JNIEXPORT jint JNICALL Java_de_entropia_can_CanSocket__1clearERR
 {
 	return canid & ~CAN_ERR_FLAG;
 }
+
+#ifdef __cplusplus
+}
+#endif
